@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"os"
 	"path"
+
+	"github.com/gorilla/handlers"
 )
 
 var (
@@ -73,7 +75,7 @@ func main() {
 	handler.HandleFunc("/get/", get)
 
 	srv := http.Server{
-		Handler: handler,
+		Handler: handlers.LoggingHandler(os.Stdout, handler),
 		Addr:    addr,
 	}
 
