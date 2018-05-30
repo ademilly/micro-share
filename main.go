@@ -66,7 +66,7 @@ func main() {
 		log.Fatalf("can't list directory %s: %v", root, err)
 	}
 
-	addr := fmt.Sprintf("localhost:%s", port)
+	addr := fmt.Sprintf("0.0.0.0:%s", port)
 	handler := http.NewServeMux()
 
 	handler.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
