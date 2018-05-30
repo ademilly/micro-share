@@ -1,5 +1,8 @@
 package main
 
+// TODO:
+// - add auth
+
 import (
 	"flag"
 	"fmt"
