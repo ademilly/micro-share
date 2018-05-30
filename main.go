@@ -98,7 +98,7 @@ func main() {
 	}
 
 	log.Printf("serving on https://%s", addr)
-	if err := srv.ListenAndServeTLS("certs/localhost.crt", "certs/localhost.key"); err != nil {
+	if err := srv.ListenAndServeTLS(certFile, keyFile); err != nil {
 		log.Fatalf("server stopped: %v\n", err)
 	}
 }
