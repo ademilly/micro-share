@@ -7,7 +7,6 @@ package main
 // - add file mapping
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
@@ -17,7 +16,7 @@ import (
 	"os"
 	"path"
 
-	"github.com/ademilly/micro-share/auth"
+	"github.com/ademilly/auth"
 	jwtmiddleware "github.com/auth0/go-jwt-middleware"
 	"github.com/gorilla/handlers"
 )
@@ -29,22 +28,15 @@ var (
 	keyFile  string
 )
 
-func writeTo(w http.ResponseWriter, text string) {
-	w.Header().Set("Content-Type", "text/text")
-	if _, err := w.Write([]byte(text)); err != nil {
-		log.Printf("could not write to http.ResponseWriter: %v", err)
-	}
-}
-
 func get(w http.ResponseWriter, r *http.Request) {
 	filename := path.Join(root, r.URL.Path[len("/get/"):])
 
 	f, err := os.Open(filename)
 	defer f.Close()
 	if err != nil {
-		log.Printf("could not read file %s: %v", filename, err)
-
-		http.Error(w, "file does not exist :(", http.StatusNotFound)
+		msg := fmt.Sprintf("could not read file %s: %v", filename, err)
+		log.Println(msg)
+		http.Error(w, msg, http.StatusBadRequest)
 		return
 	}
 
@@ -53,50 +45,36 @@ func get(w http.ResponseWriter, r *http.Request) {
 	_, err = io.Copy(w, f)
 
 	if err != nil {
-		log.Printf("could not write file to client %s: %v", filename, err)
-
 		w.Header().Del("Content-Type")
 		w.Header().Del("Content-Disposition")
 
-		http.Error(w, "file transfer failed on our side :(", http.StatusInternalServerError)
+		msg := fmt.Sprintf("could not write file to client %s: %v", filename, err)
+		log.Println(msg)
+		http.Error(w, msg, http.StatusInternalServerError)
+		return
 	}
 }
 
-func login(tokenizer func(string) (string, error)) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		decoder := json.NewDecoder(r.Body)
-		defer r.Body.Close()
-
-		var candidate auth.User
-		err := decoder.Decode(&candidate)
-
-		if err != nil {
-			log.Printf("could not read request body: %v", err)
-
-			http.Error(w, `request should be { "username": "USERNAME", "password": "PASSWORD" }`, http.StatusBadRequest)
-			return
-		}
-
-		err = auth.CheckHash(candidate, func() (auth.User, error) {
-			return auth.Hash(candidate)
-		})
-		if err != nil {
-			log.Println("candidate does not provide valid user / password couple")
-
-			http.Error(w, "this is not a valid user / password", http.StatusUnauthorized)
-			return
-		}
-
-		token, err := tokenizer(candidate.Username)
-		if err != nil {
-			log.Printf("could not obtain token for user %s: %v", candidate.Username, err)
-
-			http.Error(w, fmt.Sprintf("could not obtain token for user %s :(", candidate.Username), http.StatusInternalServerError)
-			return
-		}
-
-		writeTo(w, token)
+func login(w http.ResponseWriter, r *http.Request) {
+	candidate, err := auth.UserFromRequest(r)
+	if err != nil {
+		msg := fmt.Sprintf("could not retrieve candidate User from request: %v", err)
+		log.Println(msg)
+		http.Error(w, msg, http.StatusBadRequest)
+		return
 	}
+
+	token, err := auth.Login(auth.Tokenizer(addr, jwtKey), func() (auth.User, error) {
+		return auth.Hash(candidate)
+	})(candidate)
+	if err != nil {
+		msg := fmt.Sprintf("could not obtain token for user %s: %v", candidate.Username, err)
+		log.Println(msg)
+		http.Error(w, msg, http.StatusInternalServerError)
+		return
+	}
+
+	w.Write([]byte(token))
 }
 
 func protect(tokenMiddleware *jwtmiddleware.JWTMiddleware, handler http.HandlerFunc) http.HandlerFunc {
@@ -126,11 +104,11 @@ func main() {
 	addr := fmt.Sprintf("0.0.0.0:%s", port)
 	handler := http.NewServeMux()
 
-	handler.HandleFunc("/login", login(auth.Tokenizer(addr, jwtKey)))
+	handler.HandleFunc("/login", login)
 
-	handler.HandleFunc("/", protect(tokenMiddleware, func(w http.ResponseWriter, r *http.Request) {
-		writeTo(w, "welcome to this micro-share instance ;)")
-	}))
+	handler.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("welcome to this micro-share!"))
+	})
 	handler.HandleFunc("/get/", protect(tokenMiddleware, get))
 
 	srv := http.Server{
