@@ -26,6 +26,8 @@ var (
 	root     string
 	certFile string
 	keyFile  string
+	jwtKey   string
+	addr     string
 )
 
 func get(w http.ResponseWriter, r *http.Request) {
@@ -83,6 +85,13 @@ func protect(tokenMiddleware *jwtmiddleware.JWTMiddleware, handler http.HandlerF
 	}
 }
 
+func init() {
+	jwtKey = os.Getenv("JWT_KEY")
+	if jwtKey == "" {
+		log.Fatalf("JWT_KEY environment variable has not been set; it is needed for authentication to work")
+	}
+}
+
 func main() {
 	flag.StringVar(&port, "port", "8080", "port number on which to serve")
 	flag.StringVar(&root, "root", "/tmp", "path to root directory containing file to be served")
@@ -94,14 +103,9 @@ func main() {
 		log.Fatalf("can't list directory %s: %v", root, err)
 	}
 
-	jwtKey := os.Getenv("JWT_KEY")
-	if jwtKey == "" {
-		log.Fatalf("JWT_KEY environment variable has not been set; it is needed for authentication to work")
-	}
-
 	tokenMiddleware := auth.TokenMiddleware(jwtKey)
 
-	addr := fmt.Sprintf("0.0.0.0:%s", port)
+	addr = fmt.Sprintf("0.0.0.0:%s", port)
 	handler := http.NewServeMux()
 
 	handler.HandleFunc("/login", login)
