@@ -86,19 +86,30 @@ func protect(tokenMiddleware *jwtmiddleware.JWTMiddleware, handler http.HandlerF
 }
 
 func init() {
+	flag.CommandLine.SetOutput(os.Stderr)
+	flag.Usage = func() {
+		fmt.Fprintln(os.Stderr, "Usage: micro-share [options...]")
+		fmt.Fprintln(os.Stderr, `Environment:
+  JWT_KEY: jwt token key
+           used for authentication,
+           expected to be different than the null string`)
+		fmt.Fprintln(os.Stderr, "Options:")
+		flag.PrintDefaults()
+	}
+
 	flag.StringVar(&port, "port", "8080", "port number on which to serve")
 	flag.StringVar(&root, "root", "/tmp", "path to root directory containing file to be served")
 	flag.StringVar(&certFile, "certificate", "", "[optional] path to TLS certificate file")
 	flag.StringVar(&keyFile, "key", "", "[optional] path to TLS key file")
-	flag.Parse()
+}
 
+func main() {
+	flag.Parse()
 	jwtKey = os.Getenv("JWT_KEY")
 	if jwtKey == "" {
 		log.Fatalf("JWT_KEY environment variable has not been set; it is needed for authentication to work")
 	}
-}
 
-func main() {
 	if _, err := ioutil.ReadDir(root); err != nil {
 		log.Fatalf("can't list directory %s: %v", root, err)
 	}
