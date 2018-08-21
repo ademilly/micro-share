@@ -86,6 +86,12 @@ func protect(tokenMiddleware *jwtmiddleware.JWTMiddleware, handler http.HandlerF
 }
 
 func init() {
+	flag.StringVar(&port, "port", "8080", "port number on which to serve")
+	flag.StringVar(&root, "root", "/tmp", "path to root directory containing file to be served")
+	flag.StringVar(&certFile, "certificate", "", "[optional] path to TLS certificate file")
+	flag.StringVar(&keyFile, "key", "", "[optional] path to TLS key file")
+	flag.Parse()
+
 	jwtKey = os.Getenv("JWT_KEY")
 	if jwtKey == "" {
 		log.Fatalf("JWT_KEY environment variable has not been set; it is needed for authentication to work")
@@ -93,12 +99,6 @@ func init() {
 }
 
 func main() {
-	flag.StringVar(&port, "port", "8080", "port number on which to serve")
-	flag.StringVar(&root, "root", "/tmp", "path to root directory containing file to be served")
-	flag.StringVar(&certFile, "certificate", "", "[optional] path to TLS certificate file")
-	flag.StringVar(&keyFile, "key", "", "[optional] path to TLS key file")
-	flag.Parse()
-
 	if _, err := ioutil.ReadDir(root); err != nil {
 		log.Fatalf("can't list directory %s: %v", root, err)
 	}
