@@ -28,6 +28,9 @@ var (
 	keyFile  string
 	jwtKey   string
 	addr     string
+
+	httpGET  = []string{http.MethodOptions, http.MethodGet}
+	httpPOST = []string{http.MethodOptions, http.MethodPost}
 )
 
 func get(w http.ResponseWriter, r *http.Request) {
@@ -79,6 +82,27 @@ func login(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(token))
 }
 
+func isInArray(s string, arr []string) bool {
+	stringMap := map[string]bool{}
+	for _, str := range arr {
+		stringMap[str] = true
+	}
+
+	return stringMap[s]
+}
+
+func allow(methods []string, handler http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if !isInArray(r.Method, methods) {
+			msg := fmt.Sprintf("%s is not in allowed methods: %v", methods, r.Method)
+			http.Error(w, msg, http.StatusBadRequest)
+			return
+		}
+
+		handler.ServeHTTP(w, r)
+	}
+}
+
 func protect(tokenMiddleware *jwtmiddleware.JWTMiddleware, handler http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		tokenMiddleware.Handler(http.HandlerFunc(handler)).ServeHTTP(w, r)
@@ -119,12 +143,12 @@ func main() {
 	addr = fmt.Sprintf("0.0.0.0:%s", port)
 	handler := http.NewServeMux()
 
-	handler.HandleFunc("/login", login)
+	handler.HandleFunc("/login", allow(httpPOST, login))
 
-	handler.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	handler.HandleFunc("/", allow(httpGET, func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("welcome to this micro-share!"))
-	})
-	handler.HandleFunc("/get/", protect(tokenMiddleware, get))
+	}))
+	handler.HandleFunc("/get/", allow(httpGET, protect(tokenMiddleware, get)))
 
 	srv := http.Server{
 		Handler: handlers.LoggingHandler(os.Stdout, handler),
