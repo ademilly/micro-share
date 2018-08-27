@@ -15,12 +15,15 @@ services:
     build: .
     image: micro-share
     ports:
-      - 80:8080
+      - 443:8080
     environment:
       JWT_KEY: ${JWT_KEY}
       ROOT: /root/example
       DBHOSTNAME: pgsql
+      CERT: ${CERT}
+      KEY: ${KEY}
     volumes:
       - ./example:/root/example
-    command: ["sh", "-c", "./micro-share -root $${ROOT} -db-hostname $${DBHOSTNAME}"]
+      - ./certs:/root/certs
+    command: ["sh", "-c", "./micro-share -certificate $${CERT} -key $${KEY} -root $${ROOT} -db-hostname $${DBHOSTNAME}"]
     
