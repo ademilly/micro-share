@@ -63,7 +63,7 @@ Health check:
 Login:
 
 ```bash
-    $ curl -X POST -H 'Content-Type: application/json' -d '{ "username": username, "password": password }' https://micro-share.mydomain.com/login
+    $ curl -X POST -H 'Content-Type: application/json' -d '{ "username": "validusername", "password": "validpassword" }' https://micro-share.mydomain.com/login
     SOME.JWT.TOKEN
 ```
 
