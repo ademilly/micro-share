@@ -10,6 +10,24 @@ Go File sharing HTTP server with auth and user rights management
     $ go get github.com/ademilly/micro-share
 ```
 
+### psql
+
+docker-compose sets up a psql database, storing user data
+
+```bash
+    $ docker-compose up -d
+    Creating network "micro-share_default" with the default driver
+    Creating micro-share_pgsql_1 ... done
+```
+
+POSTGRES_USER and POSTGRES_PASSWORD can be defined using a `.env` file or through environment variables.
+
+To initialize the psql database, use the `psql/schema.sql` file with your preferred tool to interact with a psql database. Using the `psql` CLI tool:
+
+```bash
+    $ PGUSER=validusername PGPASSWORD=validpassword psql -h localhost -p 5432 < psql/schema.sql
+```
+
 ## usage
 
 ### fileserver
