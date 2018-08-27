@@ -28,6 +28,9 @@ var (
 	jwtKey   string
 	addr     string
 
+	dbuser     string
+	dbpassword string
+	dbname     string
 	dbhostname string
 	dbport     string
 
@@ -71,7 +74,10 @@ func login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := auth.Login(auth.Tokenizer(addr, jwtKey), retrieve(dbhostname, dbport, candidate.Username))(candidate)
+	token, err := auth.Login(
+		auth.Tokenizer(addr, jwtKey),
+		retrieve(dbuser, dbpassword, dbname, dbhostname, dbport, candidate.Username),
+	)(candidate)
 	if err != nil {
 		msg := fmt.Sprintf("could not obtain token for user %s: %v", candidate.Username, err)
 		log.Println(msg)
@@ -126,6 +132,9 @@ func init() {
 	flag.StringVar(&certFile, "certificate", "", "[optional] path to TLS certificate file")
 	flag.StringVar(&keyFile, "key", "", "[optional] path to TLS key file")
 
+	flag.StringVar(&dbuser, "db-user", "microshare", "postgres database username")
+	flag.StringVar(&dbpassword, "db-password", "microshare", "postgres database password")
+	flag.StringVar(&dbname, "db-name", "microshare", "postgres database name")
 	flag.StringVar(&dbhostname, "db-hostname", "localhost", "postgres database hostname")
 	flag.StringVar(&dbport, "db-port", "5432", "postgres database port")
 }
