@@ -7,6 +7,9 @@ Go File sharing HTTP server with auth and user rights management
 ### fileserver
 
 ```bash
+    # dependencies
+    $ go get github.com/auth0/go-jwt-middleware github.com/gorilla/handlers github.com/lib/pq github.com/ademilly/auth
+    # micro-share
     $ go get github.com/ademilly/micro-share
 ```
 

@@ -1,7 +1,6 @@
 package main
 
 // TODO:
-// - add bdd for auth
 // - add "New User" feature
 // - add user rights management
 // - add file mapping
@@ -28,6 +27,9 @@ var (
 	keyFile  string
 	jwtKey   string
 	addr     string
+
+	dbhostname string
+	dbport     string
 
 	httpGET  = []string{http.MethodOptions, http.MethodGet}
 	httpPOST = []string{http.MethodOptions, http.MethodPost}
@@ -69,9 +71,7 @@ func login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := auth.Login(auth.Tokenizer(addr, jwtKey), func() (auth.User, error) {
-		return auth.Hash(candidate)
-	})(candidate)
+	token, err := auth.Login(auth.Tokenizer(addr, jwtKey), retrieve(dbhostname, dbport, candidate.Username))(candidate)
 	if err != nil {
 		msg := fmt.Sprintf("could not obtain token for user %s: %v", candidate.Username, err)
 		log.Println(msg)
@@ -125,6 +125,9 @@ func init() {
 	flag.StringVar(&root, "root", "/tmp", "path to root directory containing file to be served")
 	flag.StringVar(&certFile, "certificate", "", "[optional] path to TLS certificate file")
 	flag.StringVar(&keyFile, "key", "", "[optional] path to TLS key file")
+
+	flag.StringVar(&dbhostname, "db-hostname", "localhost", "postgres database hostname")
+	flag.StringVar(&dbport, "db-port", "5432", "postgres database port")
 }
 
 func main() {
