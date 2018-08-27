@@ -1,7 +1,6 @@
 package main
 
 // TODO:
-// - add "New User" feature
 // - add user rights management
 // - add file mapping
 
@@ -14,6 +13,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"strconv"
 
 	"github.com/ademilly/auth"
 	jwtmiddleware "github.com/auth0/go-jwt-middleware"
@@ -63,6 +63,26 @@ func get(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
+}
+
+func newUser(w http.ResponseWriter, r *http.Request) {
+	candidate, err := auth.UserFromRequest(r)
+	if err != nil {
+		msg := fmt.Sprintf("could not retrieve candidate User from request: %v", err)
+		log.Println(msg)
+		http.Error(w, msg, http.StatusBadRequest)
+		return
+	}
+
+	userID, err := addUser(dbuser, dbpassword, dbname, dbhostname, dbport, candidate)
+	if err != nil {
+		msg := fmt.Sprintf("could not create a new user: %v", err)
+		log.Println(msg)
+		http.Error(w, msg, http.StatusInternalServerError)
+		return
+	}
+
+	w.Write([]byte(strconv.FormatInt(userID, 10)))
 }
 
 func login(w http.ResponseWriter, r *http.Request) {
@@ -156,6 +176,7 @@ func main() {
 	handler := http.NewServeMux()
 
 	handler.HandleFunc("/login", allow(httpPOST, login))
+	handler.HandleFunc("/new-user", allow(httpPOST, newUser))
 
 	handler.HandleFunc("/", allow(httpGET, func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("welcome to this micro-share!"))

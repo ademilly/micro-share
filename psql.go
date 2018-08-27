@@ -25,3 +25,23 @@ func retrieve(pguser, pgpassword, pgdbname, hostname, port, username string) aut
 		return auth.User{Username: username, Hash: passhash}, err
 	}
 }
+
+func addUser(pguser, pgpassword, pgdbname, hostname, port string, candidate auth.User) (int64, error) {
+	newUser, err := auth.Hash(candidate)
+	if err != nil {
+		return 0, fmt.Errorf("could not hash candidate password: %v", err)
+	}
+
+	db, err := conn(pguser, pgpassword, pgdbname, hostname, port)
+	if err != nil {
+		return 0, fmt.Errorf("could not connect to database: %v", err)
+	}
+
+	var userID int64
+	err = db.QueryRow("INSERT INTO users (username, passhash) VALUES ($1, $2) RETURNING id", newUser.Username, newUser.Hash).Scan(&userID)
+	if err != nil {
+		return 0, fmt.Errorf("could not add new user: %v", err)
+	}
+
+	return userID, nil
+}
