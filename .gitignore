@@ -13,3 +13,4 @@
 
 psql/data
 .env
+certs/
