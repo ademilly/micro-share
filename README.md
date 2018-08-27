@@ -6,11 +6,19 @@ Go File sharing HTTP server with auth and user rights management
 
 ### fileserver
 
+Using `go get`:
+
 ```bash
     # dependencies
     $ go get github.com/auth0/go-jwt-middleware github.com/gorilla/handlers github.com/lib/pq github.com/ademilly/auth
     # micro-share
     $ go get github.com/ademilly/micro-share
+```
+
+Using `docker`:
+
+```bash
+    $ docker-compose build
 ```
 
 ### psql
@@ -32,6 +40,16 @@ To initialize the psql database, use the `psql/schema.sql` file with your prefer
 ```
 
 ## usage
+
+### docker-compose
+
+The default `docker-compose.yml` file expects a values for the following environment variables:
+
+- JWT_KEY => string used to generate JWT tokens
+- CERT    => path to a certificate file (used for https)
+- KEY     => path to a key file (used for https)
+
+Certificate and key file are expected to live in a local `certs/` directory for the default `docker-compose.yml`.
 
 ### fileserver
 
