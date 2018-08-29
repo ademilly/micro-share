@@ -88,6 +88,7 @@ The JWT_KEY environment variable is used to initialize the token middleware; thu
 
 - `/` used for health checking; serves a welcome message
 - `/login` POST to login; data should be send as json in request body
+- `/new-user` POST to create new-user; data should be send as json in request body
 - `/get/[pathtofile]` GET to download file at `pathtofile`; is protected by JWT token
 
 #### examples
@@ -104,6 +105,13 @@ Login:
 ```bash
     $ curl -X POST -H 'Content-Type: application/json' -d '{ "username": "validusername", "password": "validpassword" }' https://micro-share.mydomain.com/login
     SOME.JWT.TOKEN
+```
+
+New User:
+
+```bash
+    $ curl -X POST -H 'Content-Type: application/json' -d '{ "username": "validusername", "password": "validpassword" }' https://micro-share.mydomain.com/new-user
+    SOME_ID
 ```
 
 Download file:
