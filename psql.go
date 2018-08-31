@@ -134,13 +134,12 @@ func listFiles(conf ConnConf, username string) ([]FileData, error) {
 		return nil, fmt.Errorf("could not connect to database: %v", err)
 	}
 
-	var groupID int64
-	err = db.QueryRow("SELECT id FROM groups WHERE groupname = $1", username).Scan(&groupID)
-	if err != nil {
-		return nil, fmt.Errorf("could not retrieve groupID: %v", err)
-	}
-
-	rows, err := db.Query("SELECT filepath, md5 FROM files WHERE ownerID = $1", groupID)
+	rows, err := db.Query(`SELECT files.filepath, files.md5 
+	FROM files, users, relations, readers
+	WHERE users.username = $1 
+		AND relations.userid = users.id
+		AND readers.groupid = relations.groupid
+		AND files.id = readers.fileid`, username)
 	if err != nil {
 		return nil, fmt.Errorf("could not retrieve files: %v", err)
 	}
@@ -174,16 +173,50 @@ func addFile(conf ConnConf, filepath string, username string) (string, error) {
 		return "", fmt.Errorf("could not retrieve groupID: %v", err)
 	}
 
+	var fileID int64
 	var md5hash string
 	err = db.QueryRow(
-		"INSERT INTO files (filepath, md5, ownerID) VALUES ($1, $2, $3) RETURNING md5",
+		"INSERT INTO files (filepath, md5, ownerID) VALUES ($1, $2, $3) RETURNING id, md5",
 		filepath, md5FromString(filepath), groupID,
-	).Scan(&md5hash)
+	).Scan(&fileID, &md5hash)
 	if err != nil {
 		return "", fmt.Errorf("could not register file: %v", err)
 	}
 
+	var readersID int64
+	err = db.QueryRow(
+		"INSERT INTO readers (fileID, groupID) VALUES ($1, $2) RETURNING id",
+		fileID, groupID,
+	).Scan(&readersID)
+
 	return md5hash, nil
+}
+
+func addReader(conf ConnConf, md5hash, groupname string) (int64, error) {
+	db, err := conf.conn()
+	if err != nil {
+		return 0, fmt.Errorf("could not connect to database: %v", err)
+	}
+
+	var fileID int64
+	err = db.QueryRow("SELECT id FROM files WHERE md5 = $1", md5hash).Scan(&fileID)
+	if err != nil {
+		return 0, fmt.Errorf("could not retrieve fileID: %v", err)
+	}
+
+	var groupID int64
+	err = db.QueryRow("SELECT id FROM groups WHERE groupname = $1", groupname).Scan(&groupID)
+	if err != nil {
+		return 0, fmt.Errorf("could not retrieve groupID: %v", err)
+	}
+
+	var readerID int64
+	err = db.QueryRow("INSERT INTO readers (fileID, groupID) VALUES ($1, $2) RETURNING id", fileID, groupID).Scan(&readerID)
+	if err != nil {
+		return 0, fmt.Errorf("could not add reader: %v", err)
+	}
+
+	return readerID, nil
 }
 
 func getFilepath(conf ConnConf, md5hash, username string) (string, error) {

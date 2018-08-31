@@ -235,6 +235,31 @@ func newMember(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(strconv.FormatInt(relationID, 10)))
 }
 
+type newReaderPayload struct {
+	MD5       string `json:"md5"`
+	GroupName string `json:"group_name"`
+}
+
+func newReader(w http.ResponseWriter, r *http.Request) {
+	decoder := json.NewDecoder(r.Body)
+	defer r.Body.Close()
+
+	var reader newReaderPayload
+	err := decoder.Decode(&reader)
+	if f, err := handleError(err, w, http.StatusBadRequest, "could not retrieve reader data from request: %v", err); err != nil {
+		f()
+		return
+	}
+
+	readerID, err := addReader(dbconf, reader.MD5, reader.GroupName)
+	if f, err := handleError(err, w, http.StatusInternalServerError, "could not add reader %s to file %s: %v", reader.GroupName, reader.MD5, err); err != nil {
+		f()
+		return
+	}
+
+	w.Write([]byte(strconv.FormatInt(readerID, 10)))
+}
+
 func login(w http.ResponseWriter, r *http.Request) {
 	candidate, err := auth.UserFromRequest(r)
 	if f, err := handleError(err, w, http.StatusBadRequest, "could not retrieve candidate User from request: %v", err); err != nil {
@@ -324,6 +349,7 @@ func main() {
 	handler.HandleFunc("/new-user", allow(httpPOST, newUser))
 	handler.HandleFunc("/new-group", allow(httpPOST, newGroup))
 	handler.HandleFunc("/new-member", allow(httpPOST, newMember))
+	handler.HandleFunc("/new-reader", allow(httpPOST, newReader))
 
 	handler.HandleFunc("/", allow(httpGET, func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("welcome to this micro-share!"))
