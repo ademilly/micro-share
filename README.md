@@ -89,7 +89,8 @@ The JWT_KEY environment variable is used to initialize the token middleware; thu
 - `/` used for health checking; serves a welcome message
 - `/login` POST to login; data should be send as json in request body
 - `/new-user` POST to create new-user; data should be send as json in request body
-- `/get/[pathtofile]` GET to download file at `pathtofile`; is protected by JWT token
+- `/upload` POST file to upload file
+- `/get/base64md5hash` GET to download file matching `base64md5hash`; is protected by JWT token
 
 #### examples
 
@@ -114,14 +115,29 @@ New User:
     SOME_ID
 ```
 
+Upload file:
+
+```bash
+    $ curl -F 'uploadFile=@path/to/file' -H "Authorization: Bearer SOME.JWT.TOKEN" https://micro-share.mydomain.com/upload
+    base64md5hash
+```
+
+List files:
+
+```bash
+    $ curl -H 'Authorization: Bearer SOME.JWT.TOKEN' -k https://localhost/list
+    somefile - base64md5hash
+    ...
+```
+
 Download file:
 
 ```bash
-    $ curl -H "Authorization: Bearer SOME.JWT.TOKEN" https://micro-share.mydomain.com/get/somefile
+    $ curl -H "Authorization: Bearer SOME.JWT.TOKEN" https://micro-share.mydomain.com/get/base64md5hash
     content of file
 ```
 
 ```bash
-    $ wget --header "Authorization: Bearer SOME.JWT.TOKEN" https://0.0.0.0/get/myfile.txt
-    => download myfile.txt to myfile.txt
+    $ wget --header "Authorization: Bearer SOME.JWT.TOKEN" https://micro-share.mydomain.com/get/base64md5hash
+    => download content of target file to new file at path base64md5hash
 ```
