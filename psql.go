@@ -74,6 +74,48 @@ func addUser(conf ConnConf, candidate auth.User) (int64, error) {
 	return userID, nil
 }
 
+func addGroup(conf ConnConf, groupname string) (int64, error) {
+	db, err := conf.conn()
+	if err != nil {
+		return 0, fmt.Errorf("could not connect to database: %v", err)
+	}
+
+	var groupID int64
+	err = db.QueryRow("INSERT INTO groups (groupname) VALUES ($1) RETURNING id", groupname).Scan(&groupID)
+	if err != nil {
+		return 0, fmt.Errorf("could not add group %s: %v", groupname, err)
+	}
+
+	return groupID, nil
+}
+
+func addUserToGroup(conf ConnConf, username, groupname string) (int64, error) {
+	db, err := conf.conn()
+	if err != nil {
+		return 0, fmt.Errorf("could not connect to database: %v", err)
+	}
+
+	var groupID int64
+	err = db.QueryRow("SELECT id FROM groups WHERE groupname = $1", groupname).Scan(&groupID)
+	if err != nil {
+		return 0, fmt.Errorf("could not retrieve id for group %s: %v", groupname, err)
+	}
+
+	var userID int64
+	err = db.QueryRow("SELECT id FROM users WHERE username = $1", username).Scan(&userID)
+	if err != nil {
+		return 0, fmt.Errorf("could not retrieve id for user %s: %v", groupname, err)
+	}
+
+	var relationID int64
+	err = db.QueryRow("INSERT INTO relations (groupID, userID) VALUES ($1, $2) RETURNING id", groupID, userID).Scan(&relationID)
+	if err != nil {
+		return 0, fmt.Errorf("could not add user %s to group %s: %v", username, groupname, err)
+	}
+
+	return relationID, nil
+}
+
 func md5FromString(str string) string {
 	h := md5.New()
 	io.WriteString(h, str)

@@ -5,6 +5,7 @@ package main
 // - add file mapping
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
@@ -185,6 +186,55 @@ func newUser(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(strconv.FormatInt(userID, 10)))
 }
 
+type groupPayload struct {
+	GroupName string `json:"group_name"`
+}
+
+func newGroup(w http.ResponseWriter, r *http.Request) {
+	decoder := json.NewDecoder(r.Body)
+	defer r.Body.Close()
+
+	var group groupPayload
+	err := decoder.Decode(&group)
+	if f, err := handleError(err, w, http.StatusBadRequest, "could not retrieve group data from request: %v", err); err != nil {
+		f()
+		return
+	}
+
+	groupID, err := addGroup(dbconf, group.GroupName)
+	if f, err := handleError(err, w, http.StatusInternalServerError, "could not create a new group: %v", err); err != nil {
+		f()
+		return
+	}
+
+	w.Write([]byte(strconv.FormatInt(groupID, 10)))
+}
+
+type addUserToGroupPayload struct {
+	Username  string `json:"username"`
+	GroupName string `json:"group_name"`
+}
+
+func newMember(w http.ResponseWriter, r *http.Request) {
+	decoder := json.NewDecoder(r.Body)
+	defer r.Body.Close()
+
+	var relation addUserToGroupPayload
+	err := decoder.Decode(&relation)
+	if f, err := handleError(err, w, http.StatusBadRequest, "could not retrieve relation data from request: %v", err); err != nil {
+		f()
+		return
+	}
+
+	relationID, err := addUserToGroup(dbconf, relation.Username, relation.GroupName)
+	if f, err := handleError(err, w, http.StatusInternalServerError, "could not add user %s to group %s: %v", relation.Username, relation.GroupName, err); err != nil {
+		f()
+		return
+	}
+
+	w.Write([]byte(strconv.FormatInt(relationID, 10)))
+}
+
 func login(w http.ResponseWriter, r *http.Request) {
 	candidate, err := auth.UserFromRequest(r)
 	if f, err := handleError(err, w, http.StatusBadRequest, "could not retrieve candidate User from request: %v", err); err != nil {
@@ -272,6 +322,8 @@ func main() {
 
 	handler.HandleFunc("/login", allow(httpPOST, login))
 	handler.HandleFunc("/new-user", allow(httpPOST, newUser))
+	handler.HandleFunc("/new-group", allow(httpPOST, newGroup))
+	handler.HandleFunc("/new-member", allow(httpPOST, newMember))
 
 	handler.HandleFunc("/", allow(httpGET, func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("welcome to this micro-share!"))
