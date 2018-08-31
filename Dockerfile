@@ -1,7 +1,7 @@
 FROM golang as builder
 
 WORKDIR /go/src/github.com/ademilly/micro-share
-RUN go get github.com/auth0/go-jwt-middleware github.com/gorilla/handlers github.com/lib/pq github.com/ademilly/auth
+RUN go get github.com/auth0/go-jwt-middleware github.com/gorilla/handlers github.com/lib/pq github.com/kennygrant/sanitize github.com/ademilly/auth
 COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build
 

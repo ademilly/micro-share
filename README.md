@@ -10,7 +10,7 @@ Using `go get`:
 
 ```bash
     # dependencies
-    $ go get github.com/auth0/go-jwt-middleware github.com/gorilla/handlers github.com/lib/pq github.com/ademilly/auth
+    $ go get github.com/auth0/go-jwt-middleware github.com/gorilla/handlers github.com/lib/pq github.com/kennygrant/sanitize github.com/ademilly/auth
     # micro-share
     $ go get github.com/ademilly/micro-share
 ```
