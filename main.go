@@ -186,7 +186,7 @@ func newUser(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(strconv.FormatInt(userID, 10)))
 }
 
-type groupPayload struct {
+type newGroupPayload struct {
 	GroupName string `json:"group_name"`
 }
 
@@ -194,7 +194,7 @@ func newGroup(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	defer r.Body.Close()
 
-	var group groupPayload
+	var group newGroupPayload
 	err := decoder.Decode(&group)
 	if f, err := handleError(err, w, http.StatusBadRequest, "could not retrieve group data from request: %v", err); err != nil {
 		f()
@@ -210,7 +210,7 @@ func newGroup(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(strconv.FormatInt(groupID, 10)))
 }
 
-type addUserToGroupPayload struct {
+type newMemberPayload struct {
 	Username  string `json:"username"`
 	GroupName string `json:"group_name"`
 }
@@ -219,15 +219,15 @@ func newMember(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	defer r.Body.Close()
 
-	var relation addUserToGroupPayload
-	err := decoder.Decode(&relation)
+	var member newMemberPayload
+	err := decoder.Decode(&member)
 	if f, err := handleError(err, w, http.StatusBadRequest, "could not retrieve relation data from request: %v", err); err != nil {
 		f()
 		return
 	}
 
-	relationID, err := addUserToGroup(dbconf, relation.Username, relation.GroupName)
-	if f, err := handleError(err, w, http.StatusInternalServerError, "could not add user %s to group %s: %v", relation.Username, relation.GroupName, err); err != nil {
+	relationID, err := addUserToGroup(dbconf, member.Username, member.GroupName)
+	if f, err := handleError(err, w, http.StatusInternalServerError, "could not add user %s to group %s: %v", member.Username, member.GroupName, err); err != nil {
 		f()
 		return
 	}
