@@ -125,7 +125,7 @@ Upload file:
 List files:
 
 ```bash
-    $ curl -H 'Authorization: Bearer SOME.JWT.TOKEN' -k https://localhost/list
+    $ curl -H 'Authorization: Bearer SOME.JWT.TOKEN' https://micro-share.mydomain.com/list
     somefile - base64md5hash
     ...
 ```
