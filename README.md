@@ -88,7 +88,10 @@ The JWT_KEY environment variable is used to initialize the token middleware; thu
 
 - `/` used for health checking; serves a welcome message
 - `/login` POST to login; data should be send as json in request body
-- `/new-user` POST to create new-user; data should be send as json in request body
+- `/new-user` POST to create new user; data should be send as json in request body
+- `/new-group` POST to create new group; data should be send as json in request body
+- `/new-member` POST to add a user to a group; data should be send as json in request body
+- `/new-reader` POST to allow a user to list and download the file matching the given `base64md5hash`; data should be send as json in request body
 - `/upload` POST file to upload file
 - `/get/base64md5hash` GET to download file matching `base64md5hash`; is protected by JWT token
 
@@ -115,11 +118,32 @@ New User:
     SOME_ID
 ```
 
+New Group:
+
+```bash
+    $ curl -X POST -H 'Content-Type: application/json' -d '{ "group_name": "valid_group_name" }' https://micro-share.mydomain.com/new-group
+    SOME_ID
+```
+
+New Member:
+
+```bash
+    $ curl -X POST -H 'Content-Type: application/json' -d '{ "group_name": "valid_group_name", "username": "validusername" }' https://micro-share.mydomain.com/new-member
+    SOME_ID
+```
+
 Upload file:
 
 ```bash
     $ curl -F 'uploadFile=@path/to/file' -H "Authorization: Bearer SOME.JWT.TOKEN" https://micro-share.mydomain.com/upload
     base64md5hash
+```
+
+Add Reader:
+
+```bash
+    $ curl -X POST -H 'Content-Type: application/json' -d '{ "group_name": "valid_group_name", "md5": "base64md5hash" }' https://micro-share.mydomain.com/new-reader
+    SOME_ID
 ```
 
 List files:
